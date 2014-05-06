@@ -114,7 +114,21 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASSV2
 	select CPU_FREQ_GOV_SMARTASSV2
 	help
 		Use the CPUFreq governor 'smartassV2' as default.
-		
+
+config CPU_FREQ_DEFAULT_GOV_SMOOTHASS
+ 	bool "smoothass"
+ 	select CPU_FREQ_GOV_SMOOTHASS
+ 	select CPU_FREQ_GOV_PERFORMANCE
+ 	help
+ 	  Use the CPUFreq governor 'smoothass' as default.
+
+config CPU_FREQ_DEFAULT_GOV_SMARTASS
+	bool "smartass"
+	select CPU_FREQ_GOV_SMARTASS
+	select CPU_FREQ_GOV_PERFORMANCE
+	help
+	  Use the CPUFreq governor 'smartass' as default.
+	  		
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -217,6 +231,20 @@ config CPU_FREQ_GOV_SMARTASSV2
 	depends on CPU_FREQ
 	help
 		'smartassV2' - a "smart" governor
+		If in doubt, say N.
+		
+config CPU_FREQ_GOV_SMARTASS
+	tristate "'smartass' cpufreq governor"
+	depends on CPU_FREQ
+	help
+		'smartass' - a "smart" governor
+		If in doubt, say N.
+		
+config CPU_FREQ_GOV_SMOOTHASS
+	tristate "'smoothass' cpufreq governor"
+	depends on CPU_FREQ
+	help
+		'smoothass' - a "smooth" governor
 		If in doubt, say N.
 
 menu "x86 CPU frequency scaling drivers"
