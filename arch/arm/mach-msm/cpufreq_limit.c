@@ -79,7 +79,6 @@ static ssize_t msm_cpufreq_limit_store(struct kobject *kobj,
 				pr_debug("Unable to limit cpu%d max freq to %d\n",
 						cpu, max_freq);
 		}
-		//limited_max_freq = max_freq;
 	}
 
 	return count;
