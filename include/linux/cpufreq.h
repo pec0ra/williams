@@ -264,10 +264,6 @@ void cpufreq_notify_transition(struct cpufreq_freqs *freqs, unsigned int state);
 void cpufreq_notify_utilization(struct cpufreq_policy *policy,
 		unsigned int load);
 
-//#ifdef CONFIG_MSM_CPUFREQ_LIMITER
-extern uint32_t limited_max_freq;
-//#endif
-
 static inline void cpufreq_verify_within_limits(struct cpufreq_policy *policy, unsigned int min, unsigned int max)
 {
 
