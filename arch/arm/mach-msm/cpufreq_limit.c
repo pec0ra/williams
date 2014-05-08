@@ -34,30 +34,6 @@ uint32_t limited_max_freq = CONFIG_MSM_CPU_FREQ_MAX;
 uint32_t limited_max_freq = 1728000;
 #endif
 
-static int limit_idx;
-static int limit_idx_low;
-static int limit_idx_high;
-static struct cpufreq_frequency_table *table;
-static int msm_thermal_get_freq_table(void)
-{
-	int ret = 0;
-	int i = 0;
-	table = cpufreq_frequency_get_table(0);
-	if (table == NULL) {
-		pr_debug("%s: error reading cpufreq table\n", KBUILD_MODNAME);
-		ret = -EINVAL;
-		goto fail;
-	}
-
-	while (table[i].frequency != CPUFREQ_TABLE_END)
-		i++;
-
-	limit_idx_low = 0;
-	limit_idx_high = limit_idx = i - 1;
-	BUG_ON(limit_idx_high <= 0 || limit_idx_high <= limit_idx_low);
-fail:
-	return ret;
-}
 
 static int update_cpu_max_freq(int cpu, uint32_t max_freq)
 {
@@ -96,16 +72,14 @@ static ssize_t msm_cpufreq_limit_store(struct kobject *kobj,
 	unsigned int data;
 
 	if(sscanf(buf, "%u", &data) == 1) {
-		max_freq = table[4].frequency;
-		data = data * 1000;
+		max_freq = data * 1000;
 		for_each_possible_cpu(cpu) {
-			ret = update_cpu_max_freq(cpu, data);
+			ret = update_cpu_max_freq(cpu, max_freq);
 			if (ret)
 				pr_debug("Unable to limit cpu%d max freq to %d\n",
-						cpu, data);
+						cpu, max_freq);
 		}
-		if (!ret)
-			limited_max_freq = data;
+		//limited_max_freq = max_freq;
 	}
 
 	return count;
@@ -145,7 +119,6 @@ static struct kobject *msm_cpufreq_limit_kobj;
 static int msm_cpufreq_limit_init(void)
 {
 	int sysfs_result;
-	msm_thermal_get_freq_table();
 	msm_cpufreq_limit_kobj =
 		kobject_create_and_add("msm_cpufreq_limit", kernel_kobj);
 	if (!msm_cpufreq_limit_kobj) {

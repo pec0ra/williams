@@ -32,6 +32,10 @@
 
 #include "acpuclock.h"
 
+//#ifdef CONFIG_MSM_CPUFREQ_LIMITER
+extern uint32_t limited_max_freq;
+//#endif
+
 struct cpufreq_work_struct {
 	struct work_struct work;
 	struct cpufreq_policy *policy;
@@ -71,8 +75,12 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 
 	if (limit->limits_init) {
 		if (new_freq > limit->allowed_max) {
-			new_freq = limit->allowed_max;
-			pr_debug("max: limiting freq to %d\n", new_freq);
+			if(new_freq > limited_max_freq){
+				new_freq = max(limit->allowed_max, limited_max_freq);
+				pr_debug("max: limiting freq to %d\n", new_freq);
+			} else {
+				new_freq = limited_max_freq;
+			}
 		}
 
 		if (new_freq < limit->allowed_min) {
@@ -242,10 +250,14 @@ int msm_cpufreq_set_freq_limits(uint32_t cpu, uint32_t min, uint32_t max)
 	else
 		limit->allowed_min = limit->min;
 
-
 	if ((max != MSM_CPUFREQ_NO_LIMIT) &&
-		max <= limit->max && max >= limit->min)
+		max <= limit->max && max >= limit->min){
+		#ifdef CONFIG_MSM_CPUFREQ_LIMITER
+		limit->allowed_max = min(limited_max_freq, max);
+		#else
 		limit->allowed_max = max;
+		#endif
+	}
 	else
 		limit->allowed_max = limit->max;
 
