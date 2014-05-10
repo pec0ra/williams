@@ -894,7 +894,6 @@ static int __init cpufreq_smartass_init(void)
 	
 	idle_notifier_register(&cpufreq_idle_nb);
 	INIT_WORK(&freq_scale_work, cpufreq_smartass_freq_change_time_work);
-	printk("Governor Smartass initialized");
 	register_early_suspend(&smartass_power_suspend);
 
 	return cpufreq_register_governor(&cpufreq_gov_smartass2);
