@@ -731,7 +731,6 @@ static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
 			
 		pm_idle_old = pm_idle;
 		pm_idle = cpufreq_idle;
-		idle_notifier_register(&cpufreq_idle_nb);
 
 		if (rc)
 			pr_warn("%s: failed to register input handler\n",
@@ -783,6 +782,9 @@ static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
 
 			sysfs_remove_group(cpufreq_global_kobject,
 					&smartass_attr_group);
+					
+			pm_idle = pm_idle_old;
+
 
 			break;
 	}
@@ -889,9 +891,10 @@ static int __init cpufreq_smartass_init(void)
 	down_wq = alloc_workqueue("ksmartass_down", 0, 1);
 	if (!up_wq || !down_wq)
 		return -ENOMEM;
-
+	
+	idle_notifier_register(&cpufreq_idle_nb);
 	INIT_WORK(&freq_scale_work, cpufreq_smartass_freq_change_time_work);
-
+	printk("Governor Smartass initialized");
 	register_early_suspend(&smartass_power_suspend);
 
 	return cpufreq_register_governor(&cpufreq_gov_smartass2);
