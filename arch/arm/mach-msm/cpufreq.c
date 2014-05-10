@@ -32,9 +32,9 @@
 
 #include "acpuclock.h"
 
-//#ifdef CONFIG_MSM_CPUFREQ_LIMITER
+#ifdef CONFIG_MSM_CPUFREQ_LIMITER
 extern uint32_t limited_max_freq;
-//#endif
+#endif
 
 struct cpufreq_work_struct {
 	struct work_struct work;
