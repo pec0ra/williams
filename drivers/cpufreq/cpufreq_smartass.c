@@ -599,45 +599,59 @@ static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
                 unsigned int event)
 {
         unsigned int cpu = new_policy->cpu;
+        unsigned int j;
         int rc;
-        struct smartass_info_s *this_smartass = &per_cpu(smartass_info, cpu);
+        struct smartass_info_s *pcpu;
 
         switch (event) {
         case CPUFREQ_GOV_START:
                 if ((!cpu_online(cpu)) || (!new_policy->cur))
                         return -EINVAL;
-
+				
+						
                 /*
                  * Do not register the idle hook and create sysfs
                  * entries if we have already done so.
                  */
-                if (atomic_inc_return(&active_count) <= 1) {
-                        rc = sysfs_create_group(&new_policy->kobj, &smartass_attr_group);
-                        if (rc)
-                                return rc;
-                        pm_idle_old = pm_idle;
-                        pm_idle = cpufreq_idle;
-                }
-
-                this_smartass->cur_policy = new_policy;
-                this_smartass->enable = 1;
+                if (atomic_inc_return(&active_count) > 1)
+					return 0;
+                        
+                rc = sysfs_create_group(&new_policy->kobj, &smartass_attr_group);
+                if (rc)
+                        return rc;
+                pm_idle_old = pm_idle;
+                pm_idle = cpufreq_idle;
+				
+				for_each_cpu(j, new_policy->cpus) {
+					pcpu = &per_cpu(smartass_info, j);
+		            pcpu->cur_policy = new_policy;
+		            pcpu->enable = 1;
+		        }
 
                 // notice no break here!
 
         case CPUFREQ_GOV_LIMITS:
-                smartass_update_min_max(this_smartass,new_policy,suspended);
-                if (this_smartass->cur_policy->cur != this_smartass->max_speed) {
-                        if (debug_mask & SMARTASS_DEBUG_JUMPS)
-                                printk(KERN_INFO "SmartassI: initializing to %d\n",this_smartass->max_speed);
-                        __cpufreq_driver_target(new_policy, this_smartass->max_speed, CPUFREQ_RELATION_H);
-                }
+                for_each_cpu(j, new_policy->cpus) {
+					pcpu = &per_cpu(smartass_info, j);
+					smartass_update_min_max(pcpu,new_policy,suspended);
+		            if (pcpu->cur_policy->cur != pcpu->max_speed) {
+		                    if (debug_mask & SMARTASS_DEBUG_JUMPS)
+		                            printk(KERN_INFO "SmartassI: initializing to %d\n",pcpu->max_speed);
+		                    __cpufreq_driver_target(new_policy, pcpu->max_speed, CPUFREQ_RELATION_H);
+		            }
+		        }
+		        
                 break;
 
         case CPUFREQ_GOV_STOP:
-                del_timer(&this_smartass->timer);
-                this_smartass->enable = 0;
+        		
+        		for_each_cpu(j, new_policy->cpus) {
+					pcpu = &per_cpu(smartass_info, j);
+					pcpu->enable = 0;
+					del_timer(&pcpu->timer);
+				}
 
-                if (atomic_dec_return(&active_count) > 1)
+                if (atomic_dec_return(&active_count) > 0)
                         return 0;
                 sysfs_remove_group(&new_policy->kobj,
                                 &smartass_attr_group);
