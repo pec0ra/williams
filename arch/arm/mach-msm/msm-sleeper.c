@@ -25,11 +25,13 @@
 
 extern uint32_t maxscroff;
 extern uint32_t maxscroff_freq;
-uint32_t old_limited_max_freq;
+static uint32_t policy_max_freq;
+static uint32_t old_limited_max_freq;
 
-#ifdef CONFIG_MSM_CPUFREQ_LIMITER
+int is_sleeping = 0;
+
+
 extern uint32_t limited_max_freq;
-#endif
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 
@@ -41,9 +43,8 @@ static int update_cpu_max_freq(int cpu, uint32_t max_freq)
 	if (ret)
 		return ret;
 	
-#ifdef CONFIG_MSM_CPUFREQ_LIMITER
 	limited_max_freq = max_freq;
-#endif
+	
 #ifdef DEBUG_CPU_LIMITER
 	if (max_freq != MSM_CPUFREQ_NO_LIMIT)
 		pr_info("%s: Limiting cpu%d max frequency to %d\n",
@@ -63,11 +64,15 @@ static void __cpuinit msm_sleeper_early_suspend(struct early_suspend *h)
 	int i;
 	int num_cores = 2;
 	int ret = 0;
-
+	
+	
 #ifdef CONFIG_MSM_CPUFREQ_LIMITER
-	old_limited_max_freq = limited_max_freq;
+		if(limited_max_freq != MSM_CPUFREQ_NO_LIMIT)
+			old_limited_max_freq = limited_max_freq;
+		else
+			old_limited_max_freq = policy_max_freq;
 #else
-	old_limited_max_freq = MSM_CPUFREQ_NO_LIMIT;
+		old_limited_max_freq = policy_max_freq;
 #endif
 	pr_info("Store last max freq: %d\n", old_limited_max_freq);
 	for_each_possible_cpu(cpu) {
@@ -82,7 +87,8 @@ static void __cpuinit msm_sleeper_early_suspend(struct early_suspend *h)
 		if (cpu_online(i))
 			cpu_down(i);
 	}
-
+	
+	is_sleeping = 1;
 
 	return; 
 }
@@ -106,8 +112,14 @@ static void __cpuinit msm_sleeper_late_resume(struct early_suspend *h)
 		if (!cpu_online(i))
 			cpu_up(i);
 	}
+	
+	is_sleeping = 0;
 
 	return; 
+}
+
+void msm_sleeper_add_limit(uint32_t max){
+	policy_max_freq = max;
 }
 
 static struct early_suspend msm_sleeper_early_suspend_driver = {

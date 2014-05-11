@@ -68,6 +68,8 @@ static DEFINE_PER_CPU(struct cpu_freq, cpu_freq_info);
 /* maxscroff */
 uint32_t maxscroff_freq = (702*1000);
 uint32_t maxscroff = 0; 
+extern void msm_sleeper_add_limit(uint32_t max);
+extern int is_sleeping;
 #endif
 
 static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
@@ -81,7 +83,7 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 
 	if (limit->limits_init) {
 		if (new_freq > limit->allowed_max) {
-			if(new_freq > limited_max_freq){
+			if(new_freq > limited_max_freq && !is_sleeping){
 				new_freq = max(limit->allowed_max, limited_max_freq);
 				pr_debug("max: limiting freq to %d\n", new_freq);
 			} else {
@@ -121,6 +123,10 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 		param.sched_priority = saved_sched_rt_prio;
 		sched_setscheduler_nocheck(current, saved_sched_policy, &param);
 	}
+	
+	
+	msm_sleeper_add_limit(policy->max);
+	
 	return ret;
 }
 
