@@ -72,6 +72,41 @@ extern void msm_sleeper_add_limit(uint32_t max);
 extern int is_sleeping;
 #endif
 
+
+static inline int msm_cpufreq_limits_init(void)
+{
+	int cpu = 0;
+	int i = 0;
+	struct cpufreq_frequency_table *table = NULL;
+	uint32_t min = (uint32_t) -1;
+	uint32_t max = 0;
+	struct cpu_freq *limit = NULL;
+
+	for_each_possible_cpu(cpu) {
+		limit = &per_cpu(cpu_freq_info, cpu);
+		table = cpufreq_frequency_get_table(cpu);
+		if (table == NULL) {
+			pr_err("%s: error reading cpufreq table for cpu %d\n",
+					__func__, cpu);
+			continue;
+		}
+		for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
+			if (table[i].frequency > max)
+				max = table[i].frequency;
+			if (table[i].frequency < min)
+				min = table[i].frequency;
+		}
+		limit->allowed_min = min;
+		limit->allowed_max = max;
+		limit->min = min;
+		limit->max = max;
+		limit->limits_init = 1;
+	}
+
+	return 0;
+}
+
+
 static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 {
 	int ret = 0;
@@ -81,21 +116,26 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 	struct cpu_freq *limit = &per_cpu(cpu_freq_info, policy->cpu);
 	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
 
-	if (limit->limits_init) {
-		if (new_freq > limit->allowed_max) {
-			if(new_freq > limited_max_freq && !is_sleeping){
-				new_freq = max(limit->allowed_max, limited_max_freq);
-				pr_debug("max: limiting freq to %d\n", new_freq);
-			} else {
-				new_freq = limited_max_freq;
-			}
-		}
-
-		if (new_freq < limit->allowed_min) {
-			new_freq = limit->allowed_min;
-			pr_debug("min: limiting freq to %d\n", new_freq);
-		}
+	if (!limit->limits_init)
+		msm_cpufreq_limits_init();
+		
+	if(limit->allowed_max > policy->max)
+		limit->allowed_max = policy->max;
+	
+	if(is_sleeping){
+		new_freq = min(min(new_freq, maxscroff_freq), limit->allowed_max);
+		pr_debug("Sleeping state : %d , freq changed to : %d\n", is_sleeping, new_freq);
 	}
+	else{
+		new_freq = min(new_freq, limit->allowed_max);
+	}
+	
+
+	if (new_freq < limit->allowed_min) {
+		new_freq = limit->allowed_min;
+		pr_debug("min: limiting freq to %d\n", new_freq);
+	}
+	
 
 	freqs.old = policy->cur;
 	freqs.new = new_freq;
@@ -124,11 +164,9 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 		sched_setscheduler_nocheck(current, saved_sched_policy, &param);
 	}
 	
-	
-	msm_sleeper_add_limit(policy->max);
-	
 	return ret;
 }
+
 
 static void set_cpu_work(struct work_struct *work)
 {
@@ -216,43 +254,12 @@ static unsigned int msm_cpufreq_get_freq(unsigned int cpu)
 	return acpuclk_get_rate(cpu);
 }
 
-static inline int msm_cpufreq_limits_init(void)
-{
-	int cpu = 0;
-	int i = 0;
-	struct cpufreq_frequency_table *table = NULL;
-	uint32_t min = (uint32_t) -1;
-	uint32_t max = 0;
-	struct cpu_freq *limit = NULL;
-
-	for_each_possible_cpu(cpu) {
-		limit = &per_cpu(cpu_freq_info, cpu);
-		table = cpufreq_frequency_get_table(cpu);
-		if (table == NULL) {
-			pr_err("%s: error reading cpufreq table for cpu %d\n",
-					__func__, cpu);
-			continue;
-		}
-		for (i = 0; (table[i].frequency != CPUFREQ_TABLE_END); i++) {
-			if (table[i].frequency > max)
-				max = table[i].frequency;
-			if (table[i].frequency < min)
-				min = table[i].frequency;
-		}
-		limit->allowed_min = min;
-		limit->allowed_max = max;
-		limit->min = min;
-		limit->max = max;
-		limit->limits_init = 1;
-	}
-
-	return 0;
-}
-
 int msm_cpufreq_set_freq_limits(uint32_t cpu, uint32_t min, uint32_t max)
 {
 	struct cpu_freq *limit = &per_cpu(cpu_freq_info, cpu);
-
+	struct cpufreq_work_struct *cpu_work = &per_cpu(cpufreq_work, cpu);
+	struct cpufreq_policy *policy = cpu_work->policy;
+	
 	if (!limit->limits_init)
 		msm_cpufreq_limits_init();
 
@@ -263,15 +270,14 @@ int msm_cpufreq_set_freq_limits(uint32_t cpu, uint32_t min, uint32_t max)
 		limit->allowed_min = limit->min;
 
 	if ((max != MSM_CPUFREQ_NO_LIMIT) &&
-		max <= limit->max && max >= limit->min){
-		#ifdef CONFIG_MSM_CPUFREQ_LIMITER
-		limit->allowed_max = min(limited_max_freq, max);
-		#else
-		limit->allowed_max = max;
-		#endif
-	}
+		max <= limit->max && max >= limit->min)
+			limit->allowed_max = max;		
 	else
-		limit->allowed_max = limit->max;
+			limit->allowed_max = limit->max;
+	
+	pr_info("limit->allowed_max set to : %d\n", limit->allowed_max);
+	
+	policy->max = limit->allowed_max;
 
 	pr_debug("%s: Limiting cpu %d min = %d, max = %d\n",
 			__func__, cpu,
