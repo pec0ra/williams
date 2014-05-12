@@ -82,13 +82,14 @@ static void __cpuinit msm_sleeper_early_suspend(struct early_suspend *h)
 							cpu, maxscroff_freq);
 		pr_info("Limit max frequency to: %d\n", maxscroff_freq);
 	}
-
+	
+	is_sleeping = 1;
+	
 	for (i = 1; i < num_cores; i++) {
 		if (cpu_online(i))
 			cpu_down(i);
 	}
 	
-	is_sleeping = 1;
 
 	return; 
 }
@@ -96,8 +97,6 @@ static void __cpuinit msm_sleeper_early_suspend(struct early_suspend *h)
 static void __cpuinit msm_sleeper_late_resume(struct early_suspend *h)
 {
 	int cpu;
-	int i;
-	int num_cores = 2;
 	int ret = 0;
 
 	for_each_possible_cpu(cpu) {
@@ -106,11 +105,6 @@ static void __cpuinit msm_sleeper_late_resume(struct early_suspend *h)
 					pr_debug("Unable to limit cpu%d max freq to %d\n",
 							cpu, old_limited_max_freq);
 		pr_info("Restore max frequency to %d\n", old_limited_max_freq);
-	}
-
-	for (i = 1; i < num_cores; i++) {
-		if (!cpu_online(i))
-			cpu_up(i);
 	}
 	
 	is_sleeping = 0;

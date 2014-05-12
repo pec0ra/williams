@@ -17,6 +17,11 @@
 #include <linux/gfp.h>
 #include <linux/suspend.h>
 
+
+#ifdef CONFIG_MSM_SLEEPER
+extern int is_sleeping;
+#endif
+
 #ifdef CONFIG_SMP
 /* Serializes the updates to cpu_online_mask, cpu_present_mask */
 static DEFINE_MUTEX(cpu_add_remove_lock);
@@ -296,7 +301,7 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	void *hcpu = (void *)(long)cpu;
 	unsigned long mod = tasks_frozen ? CPU_TASKS_FROZEN : 0;
 
-	if (cpu_online(cpu) || !cpu_present(cpu))
+	if (cpu_online(cpu) || !cpu_present(cpu) || (is_sleeping && cpu > 0))
 		return -EINVAL;
 
 	cpu_hotplug_begin();
