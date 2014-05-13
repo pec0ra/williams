@@ -673,7 +673,7 @@ define_global_rw_attr(ramp_down_step);
 define_global_rw_attr(max_cpu_load);
 define_global_rw_attr(min_cpu_load);
 
-static struct attribute * smartass_attributes[] = {
+static struct attribute *smartass_attributes[] = {
 	&debug_mask_attr.attr,
 	&up_rate_us_attr.attr,
 	&down_rate_us_attr.attr,
@@ -690,7 +690,7 @@ static struct attribute * smartass_attributes[] = {
 
 static struct attribute_group smartass_attr_group = {
 	.attrs = smartass_attributes,
-	.name = "smartassV2",
+	.name = "smartass",
 };
 
 static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
