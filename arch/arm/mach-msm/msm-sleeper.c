@@ -45,7 +45,15 @@ static void __cpuinit msm_sleeper_early_suspend(struct early_suspend *h)
 
 static void __cpuinit msm_sleeper_late_resume(struct early_suspend *h)
 {
+	int i;
+	int num_cores = 2;
+
 	is_sleeping = 0;
+
+	for (i = 1; i < num_cores; i++) {
+		if (!cpu_online(i))
+			cpu_up(i);
+	}
 
 	return; 
 }
