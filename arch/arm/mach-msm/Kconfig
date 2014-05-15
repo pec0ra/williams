@@ -2786,7 +2786,7 @@ config MSM_USE_USER_ACCESSIBLE_TIMERS
 	  
 config MSM_SLEEPER
 	bool "Limit max frequency while screen is off"
-	default y
+	default n
 	help
 	  Limit max frequency while screen is off
 

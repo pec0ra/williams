@@ -52,7 +52,7 @@
 DEFINE_PER_CPU(struct msm_mpdec_cpudata_t, msm_mpdec_cpudata);
 EXPORT_PER_CPU_SYMBOL_GPL(msm_mpdec_cpudata);
 
-static bool mpdec_suspended = false;
+bool mpdec_suspended = false;
 #ifndef CONFIG_HAS_EARLYSUSPEND
 static struct notifier_block msm_mpdec_lcd_notif;
 #endif

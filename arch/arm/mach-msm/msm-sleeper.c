@@ -42,7 +42,7 @@ static void __cpuinit msm_sleeper_early_suspend(struct early_suspend *h)
 
 	return; 
 }
-
+fdsafas
 static void __cpuinit msm_sleeper_late_resume(struct early_suspend *h)
 {
 	//int i;

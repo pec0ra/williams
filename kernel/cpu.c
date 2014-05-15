@@ -18,9 +18,8 @@
 #include <linux/suspend.h>
 
 
-#ifdef CONFIG_MSM_SLEEPER
-extern int is_sleeping;
-#endif
+extern bool mpdec_suspended;
+
 
 #ifdef CONFIG_SMP
 /* Serializes the updates to cpu_online_mask, cpu_present_mask */
@@ -301,9 +300,13 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	void *hcpu = (void *)(long)cpu;
 	unsigned long mod = tasks_frozen ? CPU_TASKS_FROZEN : 0;
 
-	if (cpu_online(cpu) || !cpu_present(cpu) || (is_sleeping && cpu > 0))
+	if (cpu_online(cpu) || !cpu_present(cpu))
 		return -EINVAL;
 
+	if(mpdec_suspended){
+		pr_info("cpu %d tried to wake up\n", cpu);
+		return 0;
+	}
 	cpu_hotplug_begin();
 	ret = __cpu_notify(CPU_UP_PREPARE | mod, hcpu, -1, &nr_calls);
 	if (ret) {

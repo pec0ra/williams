@@ -122,13 +122,7 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 	if(limit->allowed_max > policy->max)
 		limit->allowed_max = policy->max;
 	
-	if(is_sleeping){
-		new_freq = min(min(new_freq, maxscroff_freq), limit->allowed_max);
-		pr_debug("Sleeping state : %d , freq changed to : %d\n", is_sleeping, new_freq);
-	}
-	else{
-		new_freq = min(new_freq, limit->allowed_max);
-	}
+	new_freq = min(new_freq, limit->allowed_max);
 	
 
 	if (new_freq < limit->allowed_min) {
