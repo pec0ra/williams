@@ -46,6 +46,40 @@ config IOSCHED_CFQ
 	  This is the default I/O scheduler.
 
 	  Note: If BLK_CGROUP=m, then CFQ can be built only as module.
+	  
+config IOSCHED_VR
+	tristate "V(R) I/O scheduler"
+	default y
+	---help---
+		Requests are chosen according to SSTF with a penalty of rev_penalty
+		for switching head direction.
+
+config IOSCHED_ROW
+	tristate "ROW I/O scheduler"
+	default y
+	---help---
+		Read over Write I/O scheduler
+		
+
+config IOSCHED_SIO
+	tristate "Simple I/O (SIO) scheduler"
+	default y
+	---help---
+	  The simple I/O scheduler is based on noop, deadline, and v(r) I/O
+	  schedulers.
+
+	  This algorithm does not do any kind of sorting, as it is aimed for
+	  aleatory access devices, but it does some basic merging. We try to
+	  keep minimum overhead to achieve low latency.
+
+	  Asynchronous and synchronous requests are not treated separately, but
+	  we rely on deadlines to ensure fairness.
+	  
+config IOSCHED_FIFO
+	tristate "FIFO scheduler"
+	default y
+	---help---
+	 First in First out
 
 config CFQ_GROUP_IOSCHED
 	bool "CFQ Group Scheduling support"
@@ -53,6 +87,14 @@ config CFQ_GROUP_IOSCHED
 	default n
 	---help---
 	  Enable group IO scheduling in CFQ.
+
+config IOSCHED_VR
+	tristate "V(R) I/O scheduler"
+	default y
+	---help---
+	  Requests are chosen according to SSTF with a penalty of rev_penalty
+	  for switching head direction.
+
 
 choice
 	prompt "Default I/O scheduler"
@@ -66,6 +108,12 @@ choice
 
 	config DEFAULT_CFQ
 		bool "CFQ" if IOSCHED_CFQ=y
+		
+	config DEFAULT_SIO
+		bool "SIO" if IOSCHED_SIO=y
+		
+	config DEFAULT_ROW
+		bool "ROW" if IOSCHED_ROW=y
 
 	config DEFAULT_NOOP
 		bool "No-op"
@@ -75,6 +123,8 @@ endchoice
 config DEFAULT_IOSCHED
 	string
 	default "deadline" if DEFAULT_DEADLINE
+	default "sio" if DEFAULT_SIO
+	default "row" if DEFAULT_ROW
 	default "cfq" if DEFAULT_CFQ
 	default "noop" if DEFAULT_NOOP
 
