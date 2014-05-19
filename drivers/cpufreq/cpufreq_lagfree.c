@@ -42,6 +42,8 @@
 #define FREQ_AWAKE_MIN 						(384000)
 #define FREQ_STEP_UP_SLEEP_PERCENT 			(20)
 
+#define CPU_FREQ_MIN_TICKS					(10)
+#define CPU_FREQ_SAMPLING_LATENCY_MULTIPLIER (1000)
 /*
  * The polling frequency of this governor depends on the capability of
  * the processor. Default polling frequency is 1000 times the transition
@@ -57,7 +59,7 @@ unsigned int suspended = 0;
 #define MIN_SAMPLING_RATE_RATIO			(2)
 /* for correct statistics, we need at least 10 ticks between each measure */
 #define MIN_STAT_SAMPLING_RATE			\
-	(MIN_SAMPLING_RATE_RATIO * jiffies_to_usecs(CONFIG_CPU_FREQ_MIN_TICKS))
+	(MIN_SAMPLING_RATE_RATIO * jiffies_to_usecs(CPU_FREQ_MIN_TICKS))
 #define MIN_SAMPLING_RATE			\
 			(def_sampling_rate / MIN_SAMPLING_RATE_RATIO)
 #define MAX_SAMPLING_RATE			(500 * def_sampling_rate)
@@ -557,7 +559,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				latency = 1;
 
 			def_sampling_rate = 10 * latency *
-				CONFIG_CPU_FREQ_SAMPLING_LATENCY_MULTIPLIER;
+				CPU_FREQ_SAMPLING_LATENCY_MULTIPLIER;
 
 			if (def_sampling_rate < MIN_STAT_SAMPLING_RATE)
 				def_sampling_rate = MIN_STAT_SAMPLING_RATE;
