@@ -31,7 +31,7 @@
 #ifdef CONFIG_MSM_CPU_FREQ_SET_MIN_MAX
 uint32_t limited_max_freq = CONFIG_MSM_CPU_FREQ_MAX;
 #else
-uint32_t limited_max_freq = 1728000;
+uint32_t limited_max_freq = 1782000;
 #endif
 
 
