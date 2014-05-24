@@ -1691,8 +1691,8 @@ config CPU_VOLTAGE_TABLE
 	help
 	  Krait User Votlage Control
 
-config UNDER_CLOCK
-	bool "Enable underclock"
+config OVERCLOCK
+	bool "Enable underclock and overclock"
 	default n
 	help
 		Unlock underclocking
