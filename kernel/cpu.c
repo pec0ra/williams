@@ -304,7 +304,6 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 		return -EINVAL;
 
 	if(mpdec_suspended){
-		pr_info("cpu %d tried to wake up\n", cpu);
 		return 0;
 	}
 	cpu_hotplug_begin();

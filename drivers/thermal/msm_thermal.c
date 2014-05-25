@@ -27,7 +27,7 @@
 
 static int enabled;
 static struct msm_thermal_data msm_thermal_info;
-extern uint32_t limited_max_freq;
+static uint32_t limited_max_freq = MSM_CPUFREQ_NO_LIMIT;
 static struct delayed_work check_temp_work;
 static bool core_control_enabled;
 static uint32_t cpus_offlined;
