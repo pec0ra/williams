@@ -26,11 +26,11 @@
 #define MSM_CPUFREQ_LIMIT_MAJOR		1
 #define MSM_CPUFREQ_LIMIT_MINOR		2
 
-#define DEBUG_CPU_LIMITER 1
+//#define DEBUG_CPU_LIMITER 1
 
 struct freq_limiter{
 	uint32_t max;
-	uint32_t new_max;
+	uint32_t prev_max;
 };
 
 DEFINE_PER_CPU(struct freq_limiter, limited_max_freq);
@@ -81,7 +81,9 @@ static ssize_t msm_cpufreq_limit0_store(struct kobject *kobj,
 	int ret = 0;
 	int max_freq;
 	unsigned int data;
+	struct freq_limiter *limit = &per_cpu(limited_max_freq, 0);
 
+	limit->prev_max = limit->max;
 	if(sscanf(buf, "%u", &data) == 1) {
 		max_freq = data;
 		ret = update_cpu_max_freq(cpu, max_freq);
@@ -100,7 +102,9 @@ static ssize_t msm_cpufreq_limit1_store(struct kobject *kobj,
 	int ret = 0;
 	int max_freq;
 	unsigned int data;
+	struct freq_limiter *limit = &per_cpu(limited_max_freq, 1);
 
+	limit->prev_max = limit->max;
 	if(sscanf(buf, "%u", &data) == 1) {
 		max_freq = data;
 		ret = update_cpu_max_freq(cpu, max_freq);
@@ -159,7 +163,6 @@ static int msm_cpufreq_limit_init(void)
 	for_each_possible_cpu(cpu){
 		limit = &per_cpu(limited_max_freq, cpu);
 		limit->max = default_max_freq;
-		pr_info("[PCL] limit : %d , default_max_freq : %d , %d\n", limit->max, default_max_freq, (uint32_t) &default_max_freq);
 	}
 
 	msm_cpufreq_limit_kobj =

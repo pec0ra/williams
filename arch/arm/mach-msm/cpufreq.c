@@ -32,11 +32,11 @@
 
 #include "acpuclock.h"
 
+#ifdef CONFIG_PER_CPU_LIMITER
 struct freq_limiter{
 	uint32_t max;
-	uint32_t new_max;
+	uint32_t prev_max;
 };
-#ifdef CONFIG_PER_CPU_LIMITER
 extern struct freq_limiter limited_max_freq;
 #endif
 
@@ -77,7 +77,7 @@ extern int is_sleeping;
 #endif
 
 #ifdef CONFIG_PER_CPU_LIMITER
-		static void check_for_max_change(struct cpufreq_policy *policy);
+		static void check_for_max_change(struct cpufreq_policy *policy, struct cpu_freq *limit);
 #endif
 
 static inline int msm_cpufreq_limits_init(void)
@@ -119,9 +119,7 @@ static inline int msm_cpufreq_limits_init(void)
 		limit->max = max;
 		limit->limits_init = 1;
 #ifdef CONFIG_PER_CPU_LIMITER
-		pr_info("[PCL] : freq_limiter%d before : %d\n", cpu, freq_limiter->max);
 		freq_limiter->max = max;
-		pr_info("[PCL] : freq_limiter%d after : %d\n", cpu, freq_limiter->max);
 #endif
 	}
 
@@ -146,9 +144,9 @@ static int set_cpu_freq(struct cpufreq_policy *policy, unsigned int new_freq)
 		msm_cpufreq_limits_init();
 
 #ifdef CONFIG_PER_CPU_LIMITER
-	check_for_max_change(policy);
-	pr_info("[PCL] : freq_limiter%d : %d\n", policy->cpu, freq_limiter->max);
+	check_for_max_change(policy, limit);
 	policy->max = limit->allowed_max = freq_limiter->max;
+	freq_limiter->prev_max = freq_limiter->max;
 #endif
 
 	limit->allowed_max = policy->max;
@@ -203,34 +201,20 @@ static void set_cpu_work(struct work_struct *work)
 }
 
 #ifdef CONFIG_PER_CPU_LIMITER
-		static void check_for_max_change(struct cpufreq_policy *policy){
+		static void check_for_max_change(struct cpufreq_policy *policy, struct cpu_freq *limit){
 
 			int cpu;
 			struct freq_limiter *freq_limiter = &per_cpu(limited_max_freq, policy->cpu);
 			int new_freq = 0;
 
-			if(policy->max != freq_limiter->max){
-				freq_limiter->new_max = policy->max;
-			}
-
-			for_each_possible_cpu(cpu){
-				freq_limiter = &per_cpu(limited_max_freq, cpu);
-
-				if(freq_limiter->new_max > 0 && cpu == 0){
-					new_freq = freq_limiter->new_max;
-				} else if(freq_limiter->new_max != new_freq){
-					new_freq = 0;
-				}
-			}
-
-			if(new_freq != 0){
+			if(policy->max != freq_limiter->prev_max && freq_limiter->prev_max == freq_limiter->max && policy->cpu == 0){
+				new_freq = policy->max;
 				for_each_possible_cpu(cpu){
 					freq_limiter = &per_cpu(limited_max_freq, cpu);
 					freq_limiter->max = new_freq;
-					freq_limiter->new_max = 0;
+					freq_limiter->prev_max = new_freq;
 				}
 			}
-
 		}
 #endif
 
@@ -324,6 +308,8 @@ int msm_cpufreq_set_freq_limits(uint32_t cpu, uint32_t min, uint32_t max)
 	if (!limit->limits_init)
 		msm_cpufreq_limits_init();
 
+	pr_info("limit->allowed_max was to : %d\n", limit->allowed_max);
+
 	if ((min != MSM_CPUFREQ_NO_LIMIT) &&
 		min >= limit->min && min <= limit->max)
 		limit->allowed_min = min;
@@ -336,15 +322,16 @@ int msm_cpufreq_set_freq_limits(uint32_t cpu, uint32_t min, uint32_t max)
 	else
 			limit->allowed_max = limit->max;
 	
-	pr_info("limit->allowed_max set to : %d\n", limit->allowed_max);
 	
 	policy->max = limit->allowed_max;
+
+	pr_info("limit->allowed_max set to : %d and policy : %d\n", limit->allowed_max, policy->max);
 
 
 #ifdef CONFIG_PER_CPU_LIMITER
 		freq_limiter->max = limit->allowed_max;
 #endif
-
+		pr_info("limit->allowed_max set to : %d and policy : %d\n", limit->allowed_max, policy->max);
 	pr_debug("%s: Limiting cpu %d min = %d, max = %d\n",
 			__func__, cpu,
 			limit->allowed_min, limit->allowed_max);
