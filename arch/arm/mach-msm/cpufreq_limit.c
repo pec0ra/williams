@@ -30,6 +30,7 @@
 
 struct freq_limiter{
 	uint32_t max;
+	uint32_t new_max;
 };
 
 DEFINE_PER_CPU(struct freq_limiter, limited_max_freq);
