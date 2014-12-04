@@ -22,7 +22,7 @@
 #include <linux/sched.h>
 #include <linux/cpufreq.h>
 #include <linux/module.h>
-#include <linux/powersuspend.h>
+#include <linux/earlysuspend.h>
 
 #define DEBUG_ENABLED		1
 #define HOTPLUG_INFO_TAG	"[HOTPLUG] : "
@@ -373,7 +373,7 @@ static struct input_handler hotplug_input_handler = {
  */
 
 
-static void hotplug_power_suspend(struct power_suspend *h) {
+static void hotplug_power_suspend(struct early_suspend *h) {
 	int cpu;
 	if(screen_off_singlecore){
 		mutex_lock(&mutex);
@@ -395,7 +395,7 @@ static void hotplug_power_suspend(struct power_suspend *h) {
 	}
 }
 
-static void hotplug_late_resume(struct power_suspend *h) {
+static void hotplug_late_resume(struct early_suspend *h) {
 #ifdef DEBUG_ENABLED
 	pr_info(HOTPLUG_INFO_TAG"Screen on, let's boost the cpu !");
 #endif
@@ -409,7 +409,7 @@ static void hotplug_late_resume(struct power_suspend *h) {
 
 }
 
-static struct power_suspend hotplug_power_suspend_handler = {
+static struct early_suspend hotplug_power_suspend_handler = {
 	.suspend = hotplug_power_suspend,
 	.resume = hotplug_late_resume,
 };
@@ -431,7 +431,7 @@ static int __init hotplug_init(void)
 
 	INIT_DELAYED_WORK(&hotplug_work, hotplug);
 
-	register_power_suspend(&hotplug_power_suspend_handler);
+	register_early_suspend(&hotplug_power_suspend_handler);
 
 	queue_delayed_work_on(0, hotplug_wq, &hotplug_work, msecs_to_jiffies(REFRESH_RATE));
 

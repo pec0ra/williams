@@ -379,6 +379,8 @@ obj-$(CONFIG_MSM_RPC_VIBRATOR) += msm_vibrator.o
 obj-$(CONFIG_MSM_NATIVE_RESTART) += restart.o
 obj-$(CONFIG_MSM_MODEM_RESTART) += restart_7k.o
 
+obj-$(CONFIG_FAST_HOTPLUG) += fast_hotplug.o
+
 obj-$(CONFIG_MSM_PROC_COMM_REGULATOR) += proccomm-regulator.o
 ifdef CONFIG_MSM_PROC_COMM_REGULATOR
 obj-$(CONFIG_MACH_MSM7X27_SURF) += board-msm7627-regulator.o
