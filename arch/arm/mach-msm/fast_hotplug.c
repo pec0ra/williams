@@ -24,7 +24,7 @@
 #include <linux/module.h>
 #include <linux/earlysuspend.h>
 
-#define DEBUG_ENABLED		1
+// #define DEBUG_ENABLED		1
 #define HOTPLUG_INFO_TAG	"[HOTPLUG] : "
 
 #ifndef CONFIG_NR_CPUS
