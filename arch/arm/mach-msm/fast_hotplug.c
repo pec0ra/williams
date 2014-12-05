@@ -29,8 +29,8 @@
 // #define DEBUG_ENABLED		1
 #define HOTPLUG_INFO_TAG	"[HOTPLUG] : "
 
-#ifndef CONFIG_NR_CPUS
-#define CONFIG_NR_CPUS		4
+#ifndef CPU_COUNT
+#define CPU_COUNT		4
 #endif
 
 #define REFRESH_RATE		100  /* ms */
@@ -91,7 +91,7 @@ module_param(screen_off_singlecore, int, 0644);
 static int is_sleeping = false;
 
 static int singlecore = false;
-static int max_cpu_on = CONFIG_NR_CPUS;
+static int max_cpu_on = CPU_COUNT;
 module_param(max_cpu_on, int, 0644);
 static int min_cpu_on = 1;
 module_param(min_cpu_on, int, 0644);
@@ -131,7 +131,7 @@ unsigned int izero = 0;
 static unsigned long *plug_in_threshold[] = {
 	&zero,
 	&plug_in_core_1_threshold,
-#if CONFIG_NR_CPUS > 2
+#if CPU_COUNT > 2
 	&plug_in_core_2_threshold,
 	&plug_in_core_3_threshold,
 #endif
@@ -142,7 +142,7 @@ static unsigned int delay_in;
 static unsigned int *plug_in_delay[] = {
 	&izero,
 	&plug_in_core_1_delay,
-#if CONFIG_NR_CPUS > 2
+#if CPU_COUNT > 2
 	&plug_in_core_2_delay,
 	&plug_in_core_3_delay,
 #endif
@@ -152,7 +152,7 @@ static unsigned int *plug_in_delay[] = {
 static unsigned long *plug_out_threshold[] = {
 	&zero,
 	&plug_out_core_1_threshold,
-#if CONFIG_NR_CPUS > 2
+#if CPU_COUNT > 2
 	&plug_out_core_2_threshold,
 	&plug_out_core_3_threshold,
 #endif
@@ -163,7 +163,7 @@ static unsigned int delay_out;
 static unsigned int *plug_out_delay[] = {
 	&izero,
 	&plug_out_core_1_delay,
-#if CONFIG_NR_CPUS > 2
+#if CPU_COUNT > 2
 	&plug_out_core_2_delay,
 	&plug_out_core_3_delay,
 #endif
