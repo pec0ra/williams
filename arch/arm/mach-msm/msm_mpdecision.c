@@ -49,6 +49,10 @@
 
 #define DEBUG 0
 
+#ifndef CPU_COUNT
+#define CPU_COUNT		4
+#endif
+
 DEFINE_PER_CPU(struct msm_mpdec_cpudata_t, msm_mpdec_cpudata);
 EXPORT_PER_CPU_SYMBOL_GPL(msm_mpdec_cpudata);
 
@@ -86,7 +90,7 @@ static struct msm_mpdec_tuners {
 	.pause = MSM_MPDEC_PAUSE,
 	.scroff_single_core = true,
 	.idle_freq = MSM_MPDEC_IDLE_FREQ,
-	.max_cpus = CONFIG_NR_CPUS,
+	.max_cpus = CPU_COUNT,
 	.min_cpus = 1,
 #ifdef CONFIG_MSM_MPDEC_INPUTBOOST_CPUMIN
 	.boost_enabled = true,
@@ -124,7 +128,7 @@ static int get_slowest_cpu(void) {
 	int i, cpu = 0;
 	unsigned long rate, slow_rate = 0;
 
-	for (i = 1; i < CONFIG_NR_CPUS; i++) {
+	for (i = 1; i < CPU_COUNT; i++) {
 		if (!cpu_online(i))
 			continue;
 		rate = get_rate(i);
@@ -146,7 +150,7 @@ static unsigned long get_slowest_cpu_rate(void) {
 	int i = 0;
 	unsigned long rate, slow_rate = 0;
 
-	for (i = 0; i < CONFIG_NR_CPUS; i++) {
+	for (i = 0; i < CPU_COUNT; i++) {
 		if (!cpu_online(i))
 			continue;
 		rate = get_rate(i);
@@ -220,7 +224,7 @@ static int mp_decision(void) {
 
 	if (nr_cpu_online) {
 		index = (nr_cpu_online - 1) * 2;
-		if ((nr_cpu_online < CONFIG_NR_CPUS) && (rq_depth >= NwNs_Threshold[index])) {
+		if ((nr_cpu_online < CPU_COUNT) && (rq_depth >= NwNs_Threshold[index])) {
 			if ((total_time >= TwTs_Threshold[index]) &&
 				(nr_cpu_online < msm_mpdec_tuners_ins.max_cpus)) {
 				new_state = MSM_MPDEC_UP;
@@ -585,7 +589,7 @@ static void msm_mpdec_resume(struct work_struct * msm_mpdec_suspend_work) {
 		was_paused = true;
 		queue_delayed_work(msm_mpdec_workq, &msm_mpdec_work, 0);
 		/* restore min/max cpus limits */
-		for (cpu=1; cpu<CONFIG_NR_CPUS; cpu++) {
+		for (cpu=1; cpu<CPU_COUNT; cpu++) {
 			if (cpu < msm_mpdec_tuners_ins.min_cpus) {
 				if (!cpu_online(cpu))
 					mpdec_cpu_up(cpu);
@@ -849,12 +853,12 @@ static ssize_t store_max_cpus(struct kobject *a, struct attribute *b,
 	unsigned int input;
 	int ret, cpu;
 	ret = sscanf(buf, "%u", &input);
-	if ((ret != 1) || input > CONFIG_NR_CPUS || input < msm_mpdec_tuners_ins.min_cpus)
+	if ((ret != 1) || input > CPU_COUNT || input < msm_mpdec_tuners_ins.min_cpus)
 				return -EINVAL;
 
 	msm_mpdec_tuners_ins.max_cpus = input;
 	if (num_online_cpus() > input) {
-		for (cpu=CONFIG_NR_CPUS; cpu>0; cpu--) {
+		for (cpu=CPU_COUNT; cpu>0; cpu--) {
 			if (num_online_cpus() <= input)
 				break;
 			if (!cpu_online(cpu))
@@ -878,7 +882,7 @@ static ssize_t store_min_cpus(struct kobject *a, struct attribute *b,
 
 	msm_mpdec_tuners_ins.min_cpus = input;
 	if (num_online_cpus() < input) {
-		for (cpu=1; cpu<CONFIG_NR_CPUS; cpu++) {
+		for (cpu=1; cpu<CPU_COUNT; cpu++) {
 			if (num_online_cpus() >= input)
 				break;
 			if (cpu_online(cpu))
@@ -920,9 +924,9 @@ static ssize_t store_enabled(struct kobject *a, struct attribute *b,
 	case '0':
 		state = MSM_MPDEC_DISABLED;
 		pr_info(MPDEC_TAG"nap time... Hot plugging offline CPUs...\n");
-		for (cpu = 1; cpu < CONFIG_NR_CPUS; cpu++)
-			if (!cpu_online(cpu))
+		for_each_possible_cpu(cpu){
 				mpdec_cpu_up(cpu);
+		}
 		break;
 	case '1':
 		state = MSM_MPDEC_IDLE;
