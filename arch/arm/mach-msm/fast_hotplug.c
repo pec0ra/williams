@@ -24,7 +24,7 @@
 #include <linux/module.h>
 #include <linux/earlysuspend.h>
 
-#define FAST_HOTPLUG_ENABLED	1
+#define FAST_HOTPLUG_ENABLED	0
 
 // #define DEBUG_ENABLED		1
 #define HOTPLUG_INFO_TAG	"[HOTPLUG] : "

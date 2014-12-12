@@ -18,7 +18,9 @@
 #include <linux/suspend.h>
 
 
+#ifdef CONFIG_MSM_MPDEC
 extern bool mpdec_suspended;
+#endif
 
 
 #ifdef CONFIG_SMP
@@ -303,9 +305,11 @@ static int __cpuinit _cpu_up(unsigned int cpu, int tasks_frozen)
 	if (cpu_online(cpu) || !cpu_present(cpu))
 		return -EINVAL;
 
+#ifdef CONFIG_MSM_MPDEC
 	if(mpdec_suspended){
 		return 0;
 	}
+#endif
 	cpu_hotplug_begin();
 	ret = __cpu_notify(CPU_UP_PREPARE | mod, hcpu, -1, &nr_calls);
 	if (ret) {
