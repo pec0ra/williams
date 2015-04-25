@@ -147,7 +147,7 @@ static struct dcvs_core core_list[CORES_MAX];
 static struct kobject *cores_kobj;
 
 #ifdef CONFIG_OVERCLOCK
-#define DCVS_MAX_NUM_FREQS 42
+#define DCVS_MAX_NUM_FREQS 17
 #else
 #define DCVS_MAX_NUM_FREQS 15
 #endif
